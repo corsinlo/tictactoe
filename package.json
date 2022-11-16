@@ -9,5 +9,9 @@
     "client": "npm start --prefix client"
   },
   "author": "Ludo Corsini",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@nestjs/platform-socket.io": "^9.2.0",
+    "@nestjs/websockets": "^9.2.0"
+  }
 }

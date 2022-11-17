@@ -5,19 +5,30 @@ import { Player } from './entities/player.entity';
 
 @Injectable()
 export class PlayerService {
-  players: Player[] = [{ id: '', name: '', symbol: 'X', gameId: '' }];
-
-  createPlayer(createPlayerDto: CreatePlayerDto) {
-    const makeKey = (length = 5) => {
-      return Math.random().toString(36).substr(2, length);
+  players: Player[] = [{ id: '', name: '', symbol: '', gameId: '' }];
+  makeKey(length = 5) {
+    return Math.random().toString(36).substr(2, length);
+  }
+  createPlayer(
+    createPlayerDto: CreatePlayerDto,
+    id,
+    gameId,
+    name,
+    symbol?: string,
+  ) {
+    const player = {
+      ...createPlayerDto,
+      id: id,
+      symbol,
+      gameId: `${gameId}`,
     };
-    const player = { ...createPlayerDto, gameId: `game-${makeKey()}` };
     this.players.push(player);
     return player;
   }
 
   findAll() {
-    return `This action returns all player`;
+    const test = 1;
+    return test;
   }
 
   findOne(id: number) {

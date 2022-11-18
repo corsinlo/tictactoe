@@ -6,40 +6,26 @@ import { Player } from './entities/player.entity';
 @Injectable()
 export class PlayerService {
   players: Player[] = [{ id: '', name: '', symbol: '', gameId: '' }];
+  getPlayer(id: any) {
+    return this.players.find((player) => player.id === id);
+  }
   makeKey(length = 5) {
     return Math.random().toString(36).substr(2, length);
   }
-  createPlayer(
-    createPlayerDto: CreatePlayerDto,
-    id,
-    gameId,
-    name,
-    symbol?: string,
-  ) {
+  createPlayer(id, gameId, name, symbol?: string) {
     const player = {
-      ...createPlayerDto,
-      id: id,
+      id,
+      name,
       symbol,
-      gameId: `${gameId}`,
+      gameId,
     };
     this.players.push(player);
     return player;
   }
-
-  findAll() {
-    const test = 1;
-    return test;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} player`;
-  }
-
-  update(id: number, updatePlayerDto: UpdatePlayerDto) {
-    return `This action updates a #${id} player`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} player`;
+  removePlayer(id: any) {
+    const index = this.players.findIndex((player) => player.id === id);
+    if (index !== -1) {
+      this.players.splice(index, 1);
+    }
   }
 }

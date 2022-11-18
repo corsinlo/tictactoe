@@ -60,7 +60,7 @@ const Game = ({ name, gameId }) => {
     };
 
     const turnMessage =
-        game.playerTurn === player.id ? 'Your Move' : 'Opponunt Turn';
+        game.playerTurn === player.id ? 'Your Move' : 'Opponent Turn';
 
     const winnerMessage = winner ? getWinnerMessage() : 'Draw game';
 

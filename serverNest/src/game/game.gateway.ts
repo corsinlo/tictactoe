@@ -7,11 +7,9 @@ import {
 } from '@nestjs/websockets';
 import { GameService } from './game.service';
 import { CreateGameDto } from './dto/create-game.dto';
-import { UpdateGameDto } from './dto/update-game.dto';
 import { Socket, Server } from 'socket.io';
 import { PlayerService } from 'src/player/player.service';
 import { CreatePlayerDto } from 'src/player/dto/create-player.dto';
-import { Logger, NotFoundException } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {
@@ -22,8 +20,12 @@ export class GameGateway {
   @WebSocketServer() //const server = http.createServer(); const io = socketIO(server);
   server: Server;
 
-  handleConnection() {
+  handleConnection(@ConnectedSocket() client: Socket) {
     console.log('connection established');
+    const player = this.playerService.getPlayer(client.id);
+    if (player) {
+      this.playerService.removePlayer(player.id);
+    }
   }
 
   constructor(
@@ -38,17 +40,10 @@ export class GameGateway {
     @MessageBody('name') name: string,
     @ConnectedSocket() client: Socket,
   ) {
-    //const idm = this.gameService.identify(name, server.id); //server or socket?
     const id = client.id;
     const gameId = this.playerService.makeKey();
-    const player = this.playerService.createPlayer(
-      createPlayerDto,
-      id,
-      gameId,
-      name,
-      'X',
-    );
-    const game = this.gameService.createGame(createGameDto, player);
+    const player = this.playerService.createPlayer(id, gameId, name, 'X');
+    const game = this.gameService.createGame(gameId, player.id, null);
     client.join(gameId);
     this.server.emit('playerCreated', { player });
     this.server.emit('gameUpdated', { game });
@@ -70,71 +65,62 @@ export class GameGateway {
   ) {
     //extract specific keys out of the payload
     const id = client.id;
-    const game_ = this.gameService.getGame(gameId);
-    if (!game_) {
+    const game = this.gameService.getGame(gameId);
+    if (!game) {
       this.server.emit('notification', {
         message: 'Invalid game id',
       });
       return;
     }
-    const player2 = this.playerService.createPlayer(
-      createPlayerDto,
-      id,
-      gameId,
-      name,
-      'O',
-    );
-    const game = this.gameService.updateGame(game_, player2.id, 'playing');
+    if (game.player2) {
+      this.server.emit('notification', {
+        message: 'Game is full',
+      });
+      return;
+    }
+    const player = this.playerService.createPlayer(id, gameId, name, 'O');
+    game.player2 = player.id;
+    game.status = 'playing';
+    this.gameService.updateGame(game);
     client.join(gameId);
-    this.server.emit('playerCreated', { player2 });
+    this.server.emit('playerCreated', { player });
+    console.log(player);
     this.server.emit('gameUpdated', { game });
     console.log(game);
     client.broadcast.emit('gameUpdated', { game });
     client.broadcast.emit('notification', {
       message: `${name} has joined the game.`,
     });
+  }
 
-    /*
-    if (game.player2 != null) {
-      this.server.emit('notification', {
-        message: 'Game is full',
-      });
+  @SubscribeMessage('moveMade')
+  move(@MessageBody() data: any) {
+    const { player, square, gameId } = data;
+    const game = this.gameService.getGame(gameId);
+    const { playBoard = [], playerTurn, player1, player2 } = game;
+    playBoard[square] = player.symbol;
+    const nextTurnId = playerTurn === player1 ? player2 : player1;
+    game.playerTurn = nextTurnId;
+    game.playBoard = playBoard;
+    this.gameService.updateGame(game);
+    this.server.in(gameId).emit('gameUpdated', { game });
+
+    const hasWon = this.gameService.checkWinner(playBoard);
+    if (hasWon) {
+      const winner = { ...hasWon, player };
+      game.status = 'gameOver';
+      this.gameService.updateGame(game);
+      this.server.in(gameId).emit('gameUpdated', { game });
+      this.server.in(gameId).emit('gameEnd', { winner });
       return;
-    }*/
-  }
-
-  /* displayAll(@ConnectedSocket() client: Socket, @MessageBody() name: string) {
-  console.log(client.id);
-  return this.gameService.identify(name, client.id);
-  this.server.emit('name', name);
-  console.log(name);
-}*/
-  @SubscribeMessage('findAllGame')
-  findAll() {
-    return this.gameService.findAll();
-  }
-
-  @SubscribeMessage('findOneGame')
-  findOe(@MessageBody() id: number) {
-    return this.gameService.findOne(id);
-  }
-
-  //add gameid
-  @SubscribeMessage('joinGame')
-  joinRoom(
-    @MessageBody('name') name: string,
-    @ConnectedSocket() client: Socket,
-  ) {
-    return 0; //this.gameService.identify(name, client.id); socket.on('joinGame', ({ name, gameId }) => {...
-  }
-
-  @SubscribeMessage('moving')
-  async Move() {
-    //TODO
-  }
-
-  @SubscribeMessage('removeGame')
-  remove(@MessageBody() id: number) {
-    return this.gameService.remove(id);
+    }
+    const emptySquareIndex = playBoard.findIndex((item) => item === null);
+    if (emptySquareIndex === -1) {
+      game.status = 'gameOver';
+      this.gameService.updateGame(game);
+      this.server.in(gameId).emit('gameUpdated', { game });
+      this.server.in(gameId).emit('gameEnd', { winner: null });
+      return;
+    }
   }
 }

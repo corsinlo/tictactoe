@@ -10,7 +10,7 @@ import { CreateGameDto } from './dto/create-game.dto';
 import { Socket, Server } from 'socket.io';
 import { PlayerService } from 'src/player/player.service';
 import { CreatePlayerDto } from 'src/player/dto/create-player.dto';
-
+//DOES NOT UPDATE OR VERIFY GAME ID
 @WebSocketGateway({
   cors: {
     origin: '*',
@@ -38,15 +38,20 @@ export class GameGateway {
     @MessageBody() createPlayerDto: CreatePlayerDto,
     createGameDto: CreateGameDto,
     @MessageBody('name') name: string,
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() socket: Socket,
   ) {
-    const id = client.id;
     const gameId = this.playerService.makeKey();
-    const player = this.playerService.createPlayer(id, gameId, name, 'X');
-    const game = this.gameService.createGame(gameId, player.id, null);
-    client.join(gameId);
-    this.server.emit('playerCreated', { player });
-    this.server.emit('gameUpdated', { game });
+    const player = this.playerService.createPlayer(
+      socket.id,
+      name,
+      gameId,
+      'X',
+    );
+    const game = this.gameService.createGame(gameId, player, null);
+    this.gameService.createRoom(gameId, socket);
+    this.server.to(gameId).emit('playerCreated', { player });
+    this.server.to(gameId).emit('gameUpdated', { game });
+    console.log(game);
     console.log(player);
     this.server.emit('notification', {
       message: `The game has been created. Game id: ${game.id}. Send this to your friend to join you`,
@@ -61,10 +66,9 @@ export class GameGateway {
     @MessageBody('name') name: string,
     createPlayerDto: CreatePlayerDto,
     createGameDto: CreateGameDto,
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() socket: Socket,
   ) {
     //extract specific keys out of the payload
-    const id = client.id;
     const game = this.gameService.getGame(gameId);
     if (!game) {
       this.server.emit('notification', {
@@ -78,17 +82,23 @@ export class GameGateway {
       });
       return;
     }
-    const player = this.playerService.createPlayer(id, gameId, name, 'O');
+    const player = this.playerService.createPlayer(
+      socket.id,
+      name,
+      gameId,
+      'O',
+    );
     game.player2 = player.id;
     game.status = 'playing';
     this.gameService.updateGame(game);
-    client.join(gameId);
-    this.server.emit('playerCreated', { player });
-    console.log(player);
-    this.server.emit('gameUpdated', { game });
     console.log(game);
-    client.broadcast.emit('gameUpdated', { game });
-    client.broadcast.emit('notification', {
+    this.gameService.createRoom(gameId, socket); //socket.join(gameId);
+    this.server.to(gameId).emit('playerCreated', { player });
+    console.log(player);
+    this.server.to(gameId).emit('gameUpdated', { game });
+    console.log(game);
+    socket.broadcast.emit('gameUpdated', { game });
+    socket.broadcast.emit('notification', {
       message: `${name} has joined the game.`,
     });
   }

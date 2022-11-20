@@ -3,22 +3,14 @@ import { CreateGameDto } from './dto/create-game.dto';
 import { UpdateGameDto } from './dto/update-game.dto';
 import { Game } from './entities/game.entity';
 import { PlayerService } from 'src/player/player.service';
+import { Socket } from 'socket.io';
+import { WsResponse } from '@nestjs/websockets';
 
 @Injectable()
 export class GameService {
   constructor(private readonly playerService: PlayerService) {}
   //dummy obj game
-  games: Game[] = [
-    {
-      id: '',
-      player1: '',
-      player2: null,
-      playerTurn: '',
-      playBoard: Array(9).fill(null),
-      status: 'waiting',
-      winner: null,
-    },
-  ];
+  games: Game[] = [];
 
   winningCombinations = [
     [0, 1, 2],
@@ -31,7 +23,7 @@ export class GameService {
     [2, 4, 6],
   ];
 
-  createGame(id, player1, player2) {
+  createGame(id: string, player1: any, player2: any) {
     const newGame = {
       id,
       player1,
@@ -44,9 +36,8 @@ export class GameService {
     this.games.push(newGame);
     return newGame;
   }
-  getGame(gameId: any): CreateGameDto {
-    const game: CreateGameDto = this.games.find((game) => game.id === gameId);
-    return game;
+  getGame(gameId: any) {
+    return this.games.find((game) => game.id === gameId);
   }
   updateGame(game_: CreateGameDto) {
     const index = this.games.findIndex((g) => g.id === game_.id);
@@ -54,7 +45,13 @@ export class GameService {
     return game_;
   }
 
-  checkWinner(board) {
+  createRoom(data: string, socket: Socket) {
+    const event = data ? 'joinGame' : 'createGame';
+    socket.join(data);
+    console.log(socket.id + ' joined room: ' + data);
+    socket.to(data).emit(event, 'a new challenger approaches');
+  }
+  checkWinner(board: any[]) {
     for (let i = 0; i < this.winningCombinations.length; i++) {
       const [a, b, c] = this.winningCombinations[i];
       if (board[a] && board[a] === board[b] && board[a] === board[c]) {

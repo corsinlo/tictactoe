@@ -5,7 +5,7 @@ import { Player } from './entities/player.entity';
 
 @Injectable()
 export class PlayerService {
-  players: Player[] = [{ id: '', name: '', symbol: '', gameId: '' }];
+  players: Player[] = [];
   getPlayer(id: any) {
     return this.players.find((player) => player.id === id);
   }

@@ -17,11 +17,11 @@ const App = () => {
 
   return (
     <div className="container">
-      <h3>Multiplayer X-O</h3>
+      <h3>TicTacToe</h3>
       {!showGame && (
         <>
           <CreateGame onFormSubmit={onFormSubmit} />
-          <h4>---------- OR ----------</h4>
+          <h4>OR</h4>
           <JoinGame onFormSubmit={onFormSubmit} />
         </>
       )}

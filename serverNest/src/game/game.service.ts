@@ -20,67 +20,49 @@ export class GameService {
     },
   ];
 
-  clientToPlayer = {};
+  winningCombinations = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6],
+  ];
 
-  getClientName(clientId: string) {
-    return this.clientToPlayer[clientId];
-  }
-
-  createGame(createGameDto: CreateGameDto, player) {
-    const game = {
-      ...createGameDto,
-      id: player.gameId,
-      player1: player.id,
-      player2: null,
-      playerTurn: player.id,
+  createGame(id, player1, player2) {
+    const newGame = {
+      id,
+      player1,
+      player2,
+      playerTurn: player1,
       playBoard: Array(9).fill(null),
       status: 'waiting',
       winner: null,
     };
-    this.games.push(game);
-    return game;
+    this.games.push(newGame);
+    return newGame;
   }
   getGame(gameId: any): CreateGameDto {
     const game: CreateGameDto = this.games.find((game) => game.id === gameId);
     return game;
   }
-  updateGame(game_: CreateGameDto, player2, status?: string) {
-    console.log(`updating game with game id: ${game_.id}`);
-    const index: number = this.games.findIndex((game) => game.id === game_.id);
-    if (index === -1) {
-      throw new Error('Post not found.');
+  updateGame(game_: CreateGameDto) {
+    const index = this.games.findIndex((g) => g.id === game_.id);
+    this.games[index] = game_;
+    return game_;
+  }
+
+  checkWinner(board) {
+    for (let i = 0; i < this.winningCombinations.length; i++) {
+      const [a, b, c] = this.winningCombinations[i];
+      if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+        return {
+          winningCombination: [a, b, c],
+        };
+      }
     }
-    const player2exist: boolean = this.games.some(
-      (game) => game.player2 === player2.id && game.id !== player2.gameId,
-    );
-    if (player2exist) {
-      throw new UnprocessableEntityException('Game is full');
-    }
-    const game: CreateGameDto = {
-      ...game_,
-      player2,
-      status,
-    };
-
-    this.games[index] = game;
-    return game;
-  }
-
-  identify(name: string, clientId: string) {}
-
-  findAll() {
-    return '';
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} game`;
-  }
-
-  update(id: number, updateGameDto: UpdateGameDto) {
-    return `This action updates a #${id} game`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} game`;
+    return null;
   }
 }

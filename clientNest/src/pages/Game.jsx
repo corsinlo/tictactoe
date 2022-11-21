@@ -15,7 +15,6 @@ const Game = ({ name, gameId }) => {
         const event = gameId ? 'joinGame' : 'createGame';
         socket = new io(URL_ENDPOINT);
         socket.emit(event, { name, gameId });
-
         return () => {
             socket.emit('disconnect');
             socket.off();
@@ -33,11 +32,13 @@ const Game = ({ name, gameId }) => {
     useEffect(() => {
         socket.on('playerCreated', data => {
             const { player } = data;
+            console.log(player)
             setPlayer(player);
         });
 
         socket.on('gameUpdated', data => {
             const { game } = data;
+            console.log(game)
             setGame(game);
         });
 

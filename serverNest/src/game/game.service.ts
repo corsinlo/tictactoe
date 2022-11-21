@@ -39,17 +39,19 @@ export class GameService {
   getGame(gameId: any) {
     return this.games.find((game) => game.id === gameId);
   }
-  updateGame(game_: CreateGameDto) {
-    const index = this.games.findIndex((g) => g.id === game_.id);
-    this.games[index] = game_;
-    return game_;
+  updateGame(game) {
+    const index = this.games.findIndex((g) => g.id === game.id);
+    console.log(index);
+    if (index !== -1) {
+      this.games[index] = game;
+    }
+    this.games.push(game);
   }
 
   createRoom(data: string, socket: Socket) {
-    const event = data ? 'joinGame' : 'createGame';
     socket.join(data);
     console.log(socket.id + ' joined room: ' + data);
-    socket.to(data).emit(event, 'a new challenger approaches');
+    socket.to(data).emit('Joined room', data);
   }
   checkWinner(board: any[]) {
     for (let i = 0; i < this.winningCombinations.length; i++) {

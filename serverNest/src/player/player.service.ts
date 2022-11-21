@@ -20,6 +20,7 @@ export class PlayerService {
       gameId,
     };
     this.players.push(player);
+    console.log(player);
     return player;
   }
   removePlayer(id: any) {

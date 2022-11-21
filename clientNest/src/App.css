@@ -1,3 +1,7 @@
+*{
+ background-color: azure
+}
+
 .board {
   display: flex;
   flex-wrap: wrap;

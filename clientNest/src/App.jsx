@@ -21,7 +21,6 @@ const App = () => {
       {!showGame && (
         <>
           <CreateGame onFormSubmit={onFormSubmit} />
-          <h4>OR</h4>
           <JoinGame onFormSubmit={onFormSubmit} />
         </>
       )}

@@ -5,13 +5,17 @@ import { Game } from './entities/game.entity';
 import { PlayerService } from 'src/player/player.service';
 import { Socket } from 'socket.io';
 import { WsResponse } from '@nestjs/websockets';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 
 @Injectable()
 export class GameService {
-  constructor(private readonly playerService: PlayerService) {}
   //dummy obj game
-  games: Game[] = [];
-
+  private games: Game[] = [];
+  constructor(
+    private readonly playerService: PlayerService,
+    @InjectModel('Game') private readonly gameModel: Model<Game>,
+  ) {}
   winningCombinations = [
     [0, 1, 2],
     [3, 4, 5],
@@ -34,8 +38,12 @@ export class GameService {
       winner: null,
     };
     this.games.push(newGame);
+    const Dbrecord = new this.gameModel(newGame);
+    const result = Dbrecord.save();
+    console.log(Dbrecord);
     return newGame;
   }
+
   getGame(gameId: any) {
     return this.games.find((game) => game.id === gameId);
   }
@@ -46,6 +54,8 @@ export class GameService {
       this.games[index] = game;
     }
     this.games.push(game);
+    const Dbrecord = new this.gameModel(game);
+    const result = Dbrecord.save();
   }
 
   createRoom(data: string, socket: Socket) {

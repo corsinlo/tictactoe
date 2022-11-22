@@ -1,13 +1,18 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-
+import { MongooseModule } from '@nestjs/mongoose';
 import { GameModule } from './game/game.module';
-import { GameService } from './game/game.service';
 import { PlayerModule } from './player/player.module';
 @Module({
-  imports: [GameModule, PlayerModule],
+  imports: [
+    MongooseModule.forRoot(
+      'mongodb+srv://test:<>@cluster0.ezc5qgb.mongodb.net/test?retryWrites=true&w=majority',
+    ),
+    GameModule,
+    PlayerModule,
+  ],
   controllers: [AppController],
-  providers: [AppService, GameService],
+  providers: [AppService],
 })
 export class AppModule {}

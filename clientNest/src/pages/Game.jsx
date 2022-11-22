@@ -57,7 +57,7 @@ const Game = ({ name, gameId }) => {
     };
 
     const getWinnerMessage = () => {
-        return winner.player.id === player.id ? 'You Win' : 'You Loose';
+        return winner.player.id === player.id ? 'You have Won' : 'You Lost the Game';
     };
 
     const turnMessage =

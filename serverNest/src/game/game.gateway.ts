@@ -12,7 +12,11 @@ import { CreateGameDto } from './dto/create-game.dto';
 import { Socket, Server } from 'socket.io';
 import { PlayerService } from 'src/player/player.service';
 import { CreatePlayerDto } from 'src/player/dto/create-player.dto';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { Logger } from '@nestjs/common';
+import { Game } from './entities/game.entity';
+
 @WebSocketGateway({
   cors: {
     origin: '*',
@@ -24,10 +28,6 @@ export class GameGateway implements OnGatewayInit {
 
   private logger: Logger = new Logger('GameGateway');
 
-  /*@SubscribeMessage('msgToServer')
-  public handleMessage(client: Socket, data: any): Promise<WsResponse<any>> {
-    return this.server.to(payload.id).emit('msgToClient', payload);
-  }*/
   constructor(
     private readonly gameService: GameService,
     private readonly playerService: PlayerService,
@@ -55,7 +55,7 @@ export class GameGateway implements OnGatewayInit {
     console.log(game);
     console.log(player);
     this.server.emit('notification', {
-      message: `The game has been created. Game id: ${game.id}. Send this to your friend to join you`,
+      message: `The game has been created. Game id: ${gameId}. Send this to your friend to join you`,
     });
     this.server.emit('notification', {
       message: 'Waiting for opponent ...',
@@ -133,8 +133,8 @@ export class GameGateway implements OnGatewayInit {
     if (emptySquareIndex === -1) {
       game.status = 'gameOver';
       this.gameService.updateGame(game);
-      this.server.in(gameId).emit('gameUpdated', { game });
-      this.server.in(gameId).emit('gameEnd', { winner: null });
+      this.server.emit('gameUpdated', { game });
+      this.server.emit('gameEnd', { winner: null });
       return;
     }
   }
